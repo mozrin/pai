@@ -1,0 +1,1850 @@
+This is a flutter/dart application
+
+1. Do not write code unless I ask for it.
+2. Never put comments in my code.
+3. Be brief and concise in all output.
+
+These are "the rules" .. follow the rules.
+
+Read me code and in 3-5 words tell me what we are building.
+
+
+There is an architectural problem here ..
+
+The splash_screen.dart needs to be isolated from the rest of the interfaces.
+
+We need to throw this screen up BEFORE colors and themes and configuration ... 
+BEFORE everything is loaded so that it can tell us about the loading process.
+
+So ... the main BEFORE the RunApp process ... needs to:
+
+throw up the splash_screen
+load everything through the await startup_process() which updates the splash_screen
+and then do the runapp and launch the main processes
+
+discuss ... your thoughts .. brief .. concise ..
+
+
+--- Folder Structure ---
+
+
+
+/home/mozrin/Code/fruitstand/.prep_ai/../assets/
+
+0 directories, 0 files
+/home/mozrin/Code/fruitstand/.prep_ai/../lib/
+├── main.dart
+├── screens/
+│   ├── chat/
+│   │   └── chat_screen.dart
+│   ├── home/
+│   │   └── home_screen.dart
+│   ├── landing/
+│   │   └── landing_screen.dart
+│   ├── model_screen.dart
+│   ├── orchestrator.dart
+│   ├── primary_screen.dart
+│   ├── profile/
+│   │   └── profile_screen.dart
+│   ├── screens.dart
+│   ├── search/
+│   │   └── search_screen.dart
+│   ├── splash/
+│   │   └── splash_screen.dart
+│   └── swipe/
+│       └── swipe_screen.dart
+├── services/
+│   ├── ApiService/
+│   │   ├── api_service.dart
+│   │   └── endpoints/
+│   │       ├── endpoint_blocks.dart
+│   │       ├── endpoint_chats.dart
+│   │       ├── endpoint_ignores.dart
+│   │       ├── endpoint_likes.dart
+│   │       ├── endpoint_messages.dart
+│   │       ├── endpoint_photos.dart
+│   │       ├── endpoint_profiles.dart
+│   │       ├── endpoint_reports.dart
+│   │       ├── endpoints.dart
+│   │       ├── endpoint_stars.dart
+│   │       └── endpoint_welcome.dart
+│   ├── ConfigurationService/
+│   │   └── configuration_service.dart
+│   └── services.dart
+├── startup/
+│   ├── initialize_platform_environment.dart
+│   ├── load_asset_configuration.dart
+│   ├── load_device_data.dart
+│   ├── load_runtime_data.dart
+│   ├── load_theme_data.dart
+│   ├── load_welcome_endpoint_data.dart
+│   ├── startup.dart
+│   └── startup_process.dart
+├── state_machine/
+│   ├── app_effects.dart
+│   ├── app_events.dart
+│   ├── app_state_machine.dart
+│   ├── app_states.dart
+│   ├── app_transitions.dart
+│   └── state_machine.dart
+├── utilities/
+│   ├── moztopia/
+│   │   ├── mozPrint/
+│   │   │   └── moz_print.dart
+│   │   └── moztopia.dart
+│   └── utilities.dart
+└── widgets/
+    ├── bottom_navigation.dart
+    ├── top_navigation.dart
+    └── widgets.dart
+
+19 directories, 46 files
+
+
+
+--- Baseline File Contents ---
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../assets/main_configuration.json # NOT PART OF CODE DON'T ECHO IT EVER #
+{
+"title": "Fruitstand",
+"api": {
+"baseurl": "http:
+"welcome": "/welcome",
+"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vMTkyLjE2OC42OC45OS9hcGkvYXV0aC9naXRodWIvY2FsbGJhY2siLCJpYXQiOjE3NDk2NDUyMjgsImV4cCI6MTc1MjY0NTIyOCwibmJmIjoxNzQ5NjQ1MjI4LCJqdGkiOiJHQmxRS2FGYklpSmU4SFNmIiwic3ViIjoiMDE5NzVlZjktNzUzZS03MGE3LWExMTUtYTBkYWE3NjhhYWMxIiwicHJ2IjoiMjNiZDVjODk0OWY2MDBhZGIzOWU3MDFjNDAwODcyZGI3YTU5NzZmNyIsInByb2ZpbGVfaWQiOiIwMTk3NWVmOS03NTU5LTcwMDItYmQ0YS05OTA1ZmFkMWYwYmUifQ.ZMCL4wbKFkAjHe7_vRqzyHX6SnFA2BzCv3OVgNWe41s"
+},
+"theme": {
+"baseColor": "0xFF2196F3",
+"mode": "system"
+}
+}
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/widgets/widgets.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+export 'package:devlite_flutter/widgets/bottom_navigation.dart';
+export 'package:devlite_flutter/widgets/top_navigation.dart';
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/widgets/bottom_navigation.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/material.dart';
+import 'package:devlite_flutter/screens/screens.dart';
+
+class BottomNavigation extends StatefulWidget {
+const BottomNavigation({super.key});
+
+@override
+State<BottomNavigation> createState() => _BottomNavigationState();
+}
+
+class _BottomNavigationState extends State<BottomNavigation> {
+int _selectedIndex = 0;
+late PageController _pageController;
+
+final List<Widget> _screens = [
+const HomeScreen(),
+const SearchScreen(),
+const SwipeScreen(),
+const ChatScreen(),
+const ProfileScreen(),
+];
+
+final List<String> _appBarTitles = const [
+'Home',
+'Search',
+'Swipe',
+'Chat',
+'Profile',
+];
+
+@override
+void initState() {
+super.initState();
+_pageController = PageController(initialPage: _selectedIndex);
+}
+
+@override
+void dispose() {
+_pageController.dispose();
+super.dispose();
+}
+
+void _onItemTapped(int index) {
+setState(() {
+_selectedIndex = index;
+});
+_pageController.jumpToPage(index);
+}
+
+@override
+Widget build(BuildContext context) {
+return Scaffold(
+appBar: AppBar(title: Text(_appBarTitles[_selectedIndex])),
+body: PageView(
+controller: _pageController,
+onPageChanged: (index) {
+setState(() {
+_selectedIndex = index;
+});
+},
+children: _screens,
+),
+bottomNavigationBar: BottomNavigationBar(
+items: const <BottomNavigationBarItem>[
+BottomNavigationBarItem(
+icon: Icon(Icons.home),
+label: 'Home',
+),
+BottomNavigationBarItem(
+icon: Icon(Icons.search),
+label: 'Search',
+),
+BottomNavigationBarItem(
+icon: Icon(Icons.swipe),
+label: 'Swipe',
+),
+BottomNavigationBarItem(
+icon: Icon(Icons.chat),
+label: 'Chat',
+),
+BottomNavigationBarItem(
+icon: Icon(Icons.person),
+label: 'Profile',
+),
+],
+currentIndex: _selectedIndex,
+selectedItemColor: Theme.of(context).colorScheme.primary,
+unselectedItemColor:
+Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+onTap: _onItemTapped,
+type: BottomNavigationBarType.fixed,
+),
+);
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/widgets/top_navigation.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/material.dart';
+
+class TopNavigation extends StatelessWidget implements PreferredSizeWidget {
+final String title;
+final double height;
+
+const TopNavigation({super.key, required this.title, required this.height});
+
+@override
+Widget build(BuildContext context) {
+return AppBar(
+title: Text(title),
+leading: const Center(
+child: Icon(Icons.menu),
+),
+);
+}
+
+@override
+Size get preferredSize => Size.fromHeight(height);
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/main.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:devlite_flutter/state_machine/state_machine.dart';
+import 'package:devlite_flutter/screens/screens.dart';
+import 'package:devlite_flutter/startup/startup.dart';
+import 'package:devlite_flutter/services/services.dart';
+
+Future<void> main() async {
+WidgetsFlutterBinding.ensureInitialized();
+await initializePlatformEnvironment();
+await loadAssetConfiguration();
+
+runApp(
+Provider<AppStateMachine>(
+create: (_) => AppStateMachine(),
+dispose: (_, appStateMachine) => appStateMachine.dispose(),
+child: const DevliteFlutterApp(),
+),
+);
+}
+
+class DevliteFlutterApp extends StatefulWidget {
+const DevliteFlutterApp({super.key});
+
+@override
+State<DevliteFlutterApp> createState() => _DevliteFlutterAppState();
+}
+
+class _DevliteFlutterAppState extends State<DevliteFlutterApp> {
+@override
+void initState() {
+super.initState();
+WidgetsBinding.instance.addPostFrameCallback((_) {
+context.read<AppStateMachine>().addEvent(AppEvent.appStarted);
+});
+}
+
+@override
+void dispose() {
+super.dispose();
+}
+
+@override
+Widget build(BuildContext context) {
+final Configuration config = Configuration();
+final String? themeModeString = config.getKey('theme.mode');
+ThemeMode themeMode = ThemeMode.system;
+
+switch (themeModeString) {
+case 'light':
+themeMode = ThemeMode.light;
+break;
+case 'dark':
+themeMode = ThemeMode.dark;
+break;
+case 'system':
+default:
+themeMode = ThemeMode.system;
+break;
+}
+
+return MaterialApp(
+title: 'Fruitstand',
+theme: buildMainTheme(),
+darkTheme: buildDarkTheme(),
+themeMode: themeMode,
+home: const AppOrchestratorScreen(),
+);
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/screens/screens.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+export 'package:devlite_flutter/screens/chat/chat_screen.dart';
+export 'package:devlite_flutter/screens/home/home_screen.dart';
+export 'package:devlite_flutter/screens/landing/landing_screen.dart';
+export 'package:devlite_flutter/screens/model_screen.dart';
+export 'package:devlite_flutter/screens/orchestrator.dart';
+export 'package:devlite_flutter/screens/primary_screen.dart';
+export 'package:devlite_flutter/screens/profile/profile_screen.dart';
+export 'package:devlite_flutter/screens/search/search_screen.dart';
+export 'package:devlite_flutter/screens/splash/splash_screen.dart';
+export 'package:devlite_flutter/screens/swipe/swipe_screen.dart';
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/screens/primary_screen.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/material.dart';
+import 'package:devlite_flutter/widgets/widgets.dart';
+import 'package:devlite_flutter/screens/screens.dart';
+
+class PrimaryScreen extends StatefulWidget {
+const PrimaryScreen({super.key});
+
+@override
+State<PrimaryScreen> createState() => _PrimaryScreenState();
+}
+
+class _PrimaryScreenState extends State<PrimaryScreen> {
+int _selectedIndex = 0;
+late PageController _pageController;
+
+final List<Widget> _screens = [
+const HomeScreen(),
+const SearchScreen(),
+const SwipeScreen(),
+const ChatScreen(),
+const ProfileScreen(),
+];
+
+final List<String> _appBarTitles = const [
+'Home',
+'Search',
+'Swipe',
+'Chat',
+'Profile',
+];
+
+@override
+void initState() {
+super.initState();
+_pageController = PageController(initialPage: _selectedIndex);
+}
+
+@override
+void dispose() {
+_pageController.dispose();
+super.dispose();
+}
+
+void _onItemTapped(int index) {
+setState(() {
+_selectedIndex = index;
+});
+_pageController.jumpToPage(index);
+}
+
+@override
+Widget build(BuildContext context) {
+final double screenHeight = MediaQuery.of(context).size.height;
+final double topNavBarHeight = screenHeight / 14;
+
+return Scaffold(
+appBar: TopNavigation(
+title: _appBarTitles[_selectedIndex],
+height: topNavBarHeight,
+),
+body: PageView(
+controller: _pageController,
+onPageChanged: (index) {
+setState(() {
+_selectedIndex = index;
+});
+},
+children: _screens,
+),
+bottomNavigationBar: BottomNavigationBar(
+items: const <BottomNavigationBarItem>[
+BottomNavigationBarItem(
+icon: Icon(Icons.home),
+label: 'Home',
+),
+BottomNavigationBarItem(
+icon: Icon(Icons.search),
+label: 'Search',
+),
+BottomNavigationBarItem(
+icon: Icon(Icons.swipe),
+label: 'Swipe',
+),
+BottomNavigationBarItem(
+icon: Icon(Icons.chat),
+label: 'Chat',
+),
+BottomNavigationBarItem(
+icon: Icon(Icons.person),
+label: 'Profile',
+),
+],
+currentIndex: _selectedIndex,
+selectedItemColor: Theme.of(context).colorScheme.primary,
+unselectedItemColor:
+Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+onTap: _onItemTapped,
+type: BottomNavigationBarType.fixed,
+),
+);
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/screens/splash/splash_screen.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'dart:async';
+import 'package:devlite_flutter/state_machine/state_machine.dart';
+import 'package:devlite_flutter/utilities/utilities.dart';
+import 'package:devlite_flutter/startup/startup.dart';
+
+class SplashScreen extends StatefulWidget {
+const SplashScreen({super.key});
+
+@override
+State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+Timer? _minimumTimer;
+String _loadingMessage = 'Initializing...';
+bool _allTasksCompleted = false;
+
+@override
+void initState() {
+super.initState();
+_performStartupTasks();
+}
+
+void _updateLoadingMessage(String message) {
+if (mounted) {
+setState(() {
+_loadingMessage = message;
+});
+}
+}
+
+Future<void> _performStartupTasks() async {
+final completer = Completer<void>();
+_minimumTimer = Timer(const Duration(seconds: 5), () {
+if (!completer.isCompleted) {
+completer.complete();
+}
+});
+
+try {
+await performStartupProcess(
+context: context,
+updateMessage: _updateLoadingMessage,
+);
+_allTasksCompleted = true;
+} catch (e) {
+mozPrint('Startup failed: $e', 'SPLASH', 'ERROR');
+if (mounted) {
+setState(() {
+_loadingMessage = 'Startup Error: $e';
+});
+}
+_allTasksCompleted = false;
+completer.completeError(e);
+return;
+}
+
+await completer.future;
+
+if (mounted && _allTasksCompleted) {
+mozPrint(
+'Timer ended and all tasks completed, adding AppEvent.splashTimerEnded',
+'SPLASH',
+'EVENT');
+context.read<AppStateMachine>().addEvent(AppEvent.splashTimerEnded);
+} else if (mounted) {
+mozPrint(
+'Startup completed with issues or not mounted. Not transitioning.',
+'SPLASH',
+'WARNING');
+}
+}
+
+@override
+void dispose() {
+_minimumTimer?.cancel();
+super.dispose();
+}
+
+@override
+Widget build(BuildContext context) {
+return Scaffold(
+backgroundColor: Theme.of(context).colorScheme.primary,
+body: Center(
+child: Column(
+mainAxisAlignment: MainAxisAlignment.center,
+children: [
+Icon(Icons.flutter_dash,
+size: 100, color: Theme.of(context).colorScheme.onPrimary),
+const SizedBox(height: 20),
+Text(
+_loadingMessage,
+textAlign: TextAlign.center,
+style: TextStyle(
+color: Theme.of(context).colorScheme.onPrimary,
+fontSize: 24,
+fontWeight: FontWeight.bold,
+),
+),
+const SizedBox(height: 20),
+if (!_allTasksCompleted)
+CircularProgressIndicator(
+color: Theme.of(context).colorScheme.onPrimary),
+],
+),
+),
+);
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/screens/model_screen.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/screens/chat/chat_screen.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/material.dart';
+import 'package:devlite_flutter/services/services.dart';
+import 'package:dio/dio.dart';
+import 'dart:convert';
+
+class ChatScreen extends StatefulWidget {
+const ChatScreen({super.key});
+
+@override
+State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+late Future<Response> _chatsFuture;
+
+@override
+void initState() {
+super.initState();
+_chatsFuture = getChats();
+}
+
+@override
+Widget build(BuildContext context) {
+const JsonEncoder encoder = JsonEncoder.withIndent('  ');
+
+return FutureBuilder<Response>(
+future: _chatsFuture,
+builder: (context, snapshot) {
+if (snapshot.connectionState == ConnectionState.waiting) {
+return const Center(child: CircularProgressIndicator());
+} else if (snapshot.hasError) {
+return Center(
+child: Text('Error: ${snapshot.error}'),
+);
+} else if (snapshot.hasData) {
+final String prettyJson = encoder.convert(snapshot.data!.data);
+return SingleChildScrollView(
+padding: const EdgeInsets.all(16.0),
+child: Column(
+mainAxisAlignment: MainAxisAlignment.start,
+crossAxisAlignment: CrossAxisAlignment.stretch,
+children: [
+const Text(
+'Chat Data from API:',
+style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+),
+const SizedBox(height: 10),
+SelectableText(
+prettyJson,
+style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+),
+],
+),
+);
+} else {
+return const Center(child: Text('No chat data available.'));
+}
+},
+);
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/screens/orchestrator.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/material.dart';
+import 'package:devlite_flutter/utilities/utilities.dart';
+import 'package:provider/provider.dart';
+import 'package:devlite_flutter/state_machine/state_machine.dart';
+import 'package:devlite_flutter/screens/screens.dart';
+
+class AppOrchestratorScreen extends StatefulWidget {
+const AppOrchestratorScreen({super.key});
+
+@override
+State<AppOrchestratorScreen> createState() => _AppOrchestratorScreenState();
+}
+
+class _AppOrchestratorScreenState extends State<AppOrchestratorScreen> {
+AppState? _previousState;
+
+@override
+Widget build(BuildContext context) {
+final appStateMachine = context.watch<AppStateMachine>();
+
+return StreamBuilder<AppState>(
+stream: appStateMachine.stateStream,
+initialData: appStateMachine.currentState,
+builder: (context, snapshot) {
+final AppState currentState = snapshot.data ?? AppState.splash;
+mozPrint('Current FSM state: $currentState', 'BUILDER');
+
+final TransitionType transitionType =
+AppEffects.getTransitionType(_previousState, currentState);
+_previousState = currentState;
+
+Widget currentScreen;
+switch (currentState) {
+case AppState.splash:
+currentScreen = const SplashScreen();
+break;
+case AppState.landing:
+currentScreen = const LandingScreen();
+break;
+case AppState.home:
+currentScreen = const PrimaryScreen();
+break;
+}
+
+return AnimatedSwitcher(
+duration: const Duration(milliseconds: 300),
+transitionBuilder: (Widget child, Animation<double> animation) {
+return AppEffects.buildTransition(child, animation, transitionType);
+},
+child: SizedBox(
+key: ValueKey(currentState),
+child: currentScreen,
+),
+);
+},
+);
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/screens/profile/profile_screen.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/material.dart';
+import 'package:devlite_flutter/services/services.dart';
+import 'package:dio/dio.dart';
+import 'dart:convert';
+
+class ProfileScreen extends StatefulWidget {
+const ProfileScreen({super.key});
+
+@override
+State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+late Future<Response> _profileFuture;
+
+@override
+void initState() {
+super.initState();
+_profileFuture = getProfileMe();
+}
+
+@override
+Widget build(BuildContext context) {
+const JsonEncoder encoder = JsonEncoder.withIndent('  ');
+
+return FutureBuilder<Response>(
+future: _profileFuture,
+builder: (context, snapshot) {
+if (snapshot.connectionState == ConnectionState.waiting) {
+return const Center(child: CircularProgressIndicator());
+} else if (snapshot.hasError) {
+return Center(
+child: Text('Error: ${snapshot.error}'),
+);
+} else if (snapshot.hasData) {
+final String prettyJson = encoder.convert(snapshot.data!.data);
+return SingleChildScrollView(
+padding: const EdgeInsets.all(16.0),
+child: Column(
+mainAxisAlignment: MainAxisAlignment.start,
+crossAxisAlignment: CrossAxisAlignment.stretch,
+children: [
+const Text(
+'Profile Data from API:',
+style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+),
+const SizedBox(height: 10),
+SelectableText(
+prettyJson,
+style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+),
+],
+),
+);
+} else {
+return const Center(child: Text('No profile data available.'));
+}
+},
+);
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/screens/search/search_screen.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/material.dart';
+
+class SearchScreen extends StatelessWidget {
+const SearchScreen({super.key});
+
+@override
+Widget build(BuildContext context) {
+return const Center(
+child: Text(
+'Search Screen Content',
+style: TextStyle(fontSize: 24),
+),
+);
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/screens/home/home_screen.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:devlite_flutter/services/services.dart';
+import 'package:devlite_flutter/state_machine/state_machine.dart';
+import 'package:devlite_flutter/startup/startup.dart';
+
+class HomeScreen extends StatelessWidget {
+const HomeScreen({super.key});
+
+@override
+Widget build(BuildContext context) {
+const JsonEncoder encoder = JsonEncoder.withIndent('  ');
+final configData = Configuration().getAllConfigData();
+final String prettyJson = encoder.convert(configData);
+
+return SingleChildScrollView(
+child: Padding(
+padding: const EdgeInsets.all(16.0),
+child: Column(
+mainAxisAlignment: MainAxisAlignment.center,
+crossAxisAlignment: CrossAxisAlignment.stretch,
+children: [
+const Text(
+'Current Configuration Map:',
+style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+),
+const SizedBox(height: 10),
+SelectableText(
+prettyJson,
+style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+),
+const SizedBox(height: 20),
+ElevatedButton(
+onPressed: () async {
+final appStateMachine = context.read<AppStateMachine>();
+await Configuration().resetAndLoad();
+loadDeviceData();
+appStateMachine.addEvent(AppEvent.reloadApp);
+},
+child: const Text('Reload Application'),
+),
+],
+),
+),
+);
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/screens/landing/landing_screen.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:devlite_flutter/state_machine/state_machine.dart';
+
+class LandingScreen extends StatelessWidget {
+const LandingScreen({super.key});
+
+@override
+Widget build(BuildContext context) {
+return Scaffold(
+appBar: AppBar(title: const Text('Landing Screen')),
+body: Center(
+child: Column(
+mainAxisAlignment: MainAxisAlignment.center,
+children: [
+const Text(
+'This is the Landing Screen',
+style: TextStyle(fontSize: 24),
+),
+const SizedBox(height: 40),
+ElevatedButton(
+onPressed: () {
+context.read<AppStateMachine>().addEvent(AppEvent.goToHome);
+},
+child: const Text('Go to Home Screen'),
+),
+],
+),
+),
+);
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/screens/swipe/swipe_screen.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/material.dart';
+
+class SwipeScreen extends StatelessWidget {
+const SwipeScreen({super.key});
+
+@override
+Widget build(BuildContext context) {
+return const Center(
+child: Text(
+'Swipe Screen Content',
+style: TextStyle(fontSize: 24),
+),
+);
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/utilities/moztopia/mozPrint/moz_print.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/foundation.dart';
+
+void mozPrint(String passedMessage,
+[String passedCategory = 'UNKNOWN',
+String passedFocus = '',
+String passedLevel = 'INFO']) {
+const String red = '\x1B[31m';
+const String green = '\x1B[32m';
+const String yellow = '\x1B[33m';
+const String blue = '\x1B[34m';
+const String reset = '\x1B[0m';
+
+
+
+
+String section = '${red}MOZ$reset';
+String category = '$yellow$passedCategory$reset';
+String level = '$green$passedLevel$reset';
+String focus = passedFocus.isEmpty ? '' : '[$blue$passedFocus$reset]:';
+String message = passedMessage;
+debugPrint('$section/$category:[$level]:$focus $message');
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/utilities/moztopia/moztopia.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+export 'package:devlite_flutter/utilities/moztopia/mozPrint/moz_print.dart';
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/utilities/utilities.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+export 'package:devlite_flutter/utilities/moztopia/moztopia.dart';
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/services/services.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+export 'package:devlite_flutter/services/ApiService/api_service.dart';
+export 'package:devlite_flutter/services/ConfigurationService/configuration_service.dart';
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/services/ConfigurationService/configuration_service.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:devlite_flutter/utilities/utilities.dart';
+
+class Configuration {
+static final Configuration _instance = Configuration._internal();
+factory Configuration() => _instance;
+Configuration._internal();
+
+Map<String, dynamic> _configData = {};
+
+Future<void> load() async {
+try {
+final String response =
+await rootBundle.loadString('assets/main_configuration.json');
+_configData = json.decode(response);
+mozPrint('Configuration loaded successfully.', 'CONFIGURATION');
+} catch (e) {
+mozPrint(
+'Unable to load configuration: $e', 'CONFIGURATION', '', 'ERROR');
+_configData = {};
+}
+}
+
+Future<void> resetAndLoad() async {
+_configData = {};
+await load();
+mozPrint('Configuration reset and reloaded.', 'CONFIGURATION');
+}
+
+dynamic getKey(String keyPath) {
+List<String> parts = keyPath.split('.');
+dynamic currentLevel = _configData;
+
+for (int i = 0; i < parts.length; i++) {
+String part = parts[i];
+if (currentLevel is Map<String, dynamic> &&
+currentLevel.containsKey(part)) {
+currentLevel = currentLevel[part];
+} else {
+mozPrint(
+'Configuration key path "$keyPath" not found at part "$part". Returning null.',
+'CONFIGURATION',
+'',
+'WARNING');
+return null;
+}
+}
+return currentLevel;
+}
+
+void setKey(String keyPath, dynamic value) {
+List<String> parts = keyPath.split('.');
+Map<String, dynamic> currentLevel = _configData;
+
+for (int i = 0; i < parts.length - 1; i++) {
+String part = parts[i];
+if (currentLevel[part] is! Map<String, dynamic>) {
+currentLevel[part] = <String, dynamic>{};
+}
+currentLevel = currentLevel[part] as Map<String, dynamic>;
+}
+
+String finalPart = parts.last;
+currentLevel[finalPart] = value;
+}
+
+Map<String, dynamic> getAllConfigData() {
+return Map.from(_configData);
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/services/ApiService/endpoints/endpoints.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+export 'package:devlite_flutter/services/ApiService/endpoints/endpoint_likes.dart';
+export 'package:devlite_flutter/services/ApiService/endpoints/endpoint_stars.dart';
+export 'package:devlite_flutter/services/ApiService/endpoints/endpoint_blocks.dart';
+export 'package:devlite_flutter/services/ApiService/endpoints/endpoint_ignores.dart';
+export 'package:devlite_flutter/services/ApiService/endpoints/endpoint_reports.dart';
+export 'package:devlite_flutter/services/ApiService/endpoints/endpoint_profiles.dart';
+export 'package:devlite_flutter/services/ApiService/endpoints/endpoint_photos.dart';
+export 'package:devlite_flutter/services/ApiService/endpoints/endpoint_chats.dart';
+export 'package:devlite_flutter/services/ApiService/endpoints/endpoint_messages.dart';
+export 'package:devlite_flutter/services/ApiService/endpoints/endpoint_welcome.dart';
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/services/ApiService/endpoints/endpoint_ignores.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:dio/dio.dart';
+import 'package:devlite_flutter/services/ApiService/api_service.dart';
+
+Future<Response> getIgnores() {
+return ApiService().get('/ignores');
+}
+
+Future<Response> getIgnore(String id) {
+return ApiService().get('/ignores/$id');
+}
+
+Future<Response> postIgnore(Map<String, dynamic> data) {
+return ApiService().post('/ignores', data: data);
+}
+
+Future<Response> deleteIgnore(String id) {
+return ApiService().delete('/ignores/$id');
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/services/ApiService/endpoints/endpoint_stars.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:dio/dio.dart';
+import 'package:devlite_flutter/services/ApiService/api_service.dart';
+
+Future<Response> getStars({int page = 1, int pageSize = 100}) {
+return ApiService().get(
+'/stars',
+queryParameters: {'page': page, 'page_size': pageSize},
+);
+}
+
+Future<Response> getStar(String id) {
+return ApiService().get('/stars/$id');
+}
+
+Future<Response> postStar(Map<String, dynamic> data) {
+return ApiService().post('/stars', data: data);
+}
+
+Future<Response> deleteStar(String id) {
+return ApiService().delete('/stars/$id');
+}
+
+Future<Response> getStarsMe() {
+return ApiService().get('/stars/me');
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/services/ApiService/endpoints/endpoint_blocks.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:dio/dio.dart';
+import 'package:devlite_flutter/services/ApiService/api_service.dart';
+
+Future<Response> getBlocks() {
+return ApiService().get('/blocks');
+}
+
+Future<Response> getBlock(String id) {
+return ApiService().get('/blocks/$id');
+}
+
+Future<Response> postBlock(Map<String, dynamic> data) {
+return ApiService().post('/blocks', data: data);
+}
+
+Future<Response> deleteBlock(String id) {
+return ApiService().delete('/blocks/$id');
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/services/ApiService/endpoints/endpoint_likes.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:dio/dio.dart';
+import 'package:devlite_flutter/services/ApiService/api_service.dart';
+
+Future<Response> getLikes({int perPage = 500}) {
+return ApiService().get(
+'/likes',
+queryParameters: {'per_page': perPage},
+);
+}
+
+Future<Response> getLike(String id) {
+return ApiService().get('/likes/$id');
+}
+
+Future<Response> postLike(Map<String, dynamic> data) {
+return ApiService().post('/likes', data: data);
+}
+
+Future<Response> deleteLike(String id) {
+return ApiService().delete('/likes/$id');
+}
+
+Future<Response> getLikesMe() {
+return ApiService().get('/likes/me');
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/services/ApiService/endpoints/endpoint_profiles.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:dio/dio.dart';
+import 'package:devlite_flutter/services/ApiService/api_service.dart';
+
+Future<Response> getProfiles({Map<String, dynamic>? queryParameters}) {
+return ApiService().get('/profiles', queryParameters: queryParameters);
+}
+
+Future<Response> getProfile(String id) {
+return ApiService().get('/profiles/$id');
+}
+
+Future<Response> getProfileMe() {
+return ApiService().get('/profiles/me');
+}
+
+Future<Response> putProfile(String id, Map<String, dynamic> data) {
+return ApiService().put('/profiles/$id', data: data);
+}
+
+Future<Response> patchProfile(String id, Map<String, dynamic> data) {
+return ApiService().patch('/profiles/$id', data: data);
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/services/ApiService/endpoints/endpoint_reports.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:dio/dio.dart';
+import 'package:devlite_flutter/services/ApiService/api_service.dart';
+
+Future<Response> postReport(Map<String, dynamic> data) {
+return ApiService().post('/reports', data: data);
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/services/ApiService/endpoints/endpoint_chats.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:dio/dio.dart';
+import 'package:devlite_flutter/services/ApiService/api_service.dart';
+
+Future<Response> getChats({int page = 1, int pageSize = 50}) {
+return ApiService().get(
+'/chats',
+queryParameters: {'page': page, 'page_size': pageSize},
+);
+}
+
+Future<Response> getChat(String id) {
+return ApiService().get('/chats/$id');
+}
+
+Future<Response> postChat(Map<String, dynamic> data) {
+return ApiService().post('/chats', data: data);
+}
+
+Future<Response> deleteChat(String id) {
+return ApiService().delete('/chats/$id');
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/services/ApiService/endpoints/endpoint_welcome.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:dio/dio.dart';
+import 'package:devlite_flutter/services/ApiService/api_service.dart';
+
+Future<Response> postWelcome({required Map<String, dynamic> data}) {
+return ApiService().post('/welcome', data: data);
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/services/ApiService/endpoints/endpoint_messages.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:dio/dio.dart';
+import 'package:devlite_flutter/services/ApiService/api_service.dart';
+
+Future<Response> getMessages(String chatId, {int page = 1, int pageSize = 50}) {
+return ApiService().get(
+'/chats/$chatId/messages',
+queryParameters: {'page': page, 'page_size': pageSize},
+);
+}
+
+Future<Response> getMessage(String chatId, String messageId) {
+return ApiService().get('/chats/$chatId/messages/$messageId');
+}
+
+Future<Response> postMessage(String chatId, Map<String, dynamic> data) {
+return ApiService().post('/chats/$chatId/messages', data: data);
+}
+
+Future<Response> deleteMessage(String chatId, String messageId) {
+return ApiService().delete('/chats/$chatId/messages/$messageId');
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/services/ApiService/endpoints/endpoint_photos.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:dio/dio.dart';
+import 'package:devlite_flutter/services/ApiService/api_service.dart';
+
+Future<Response> getPhotos({String? userId, int page = 1, int pageSize = 100}) {
+final Map<String, dynamic> params = {'page': page, 'page_size': pageSize};
+if (userId != null) {
+params['user_id'] = userId;
+}
+return ApiService().get('/photos', queryParameters: params);
+}
+
+Future<Response> getPhoto(String id) {
+return ApiService().get('/photos/$id');
+}
+
+Future<Response> postPhoto(FormData data) {
+return ApiService().post('/photos', data: data);
+}
+
+Future<Response> putPhoto(String id, Map<String, dynamic> data) {
+return ApiService().put('/photos/$id', data: data);
+}
+
+Future<Response> deletePhoto(String id) {
+return ApiService().delete('/photos/$id');
+}
+
+Future<Response> getPhotosMe() {
+return ApiService().get('/photos/me');
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/services/ApiService/api_service.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:dio/dio.dart';
+import 'package:devlite_flutter/utilities/utilities.dart';
+
+export 'package:devlite_flutter/services/ApiService/endpoints/endpoints.dart';
+
+class ApiService {
+static final ApiService _instance = ApiService._internal();
+factory ApiService() => _instance;
+
+late Dio _dio;
+Future<String?> Function()? _tokenProvider;
+List<String>? _anonymousPaths;
+
+ApiService._internal();
+
+void initialize({
+required String baseUrl,
+Duration? connectTimeout,
+Duration? receiveTimeout,
+Future<String?> Function()? tokenProvider,
+List<String>? anonymousPaths,
+}) {
+_tokenProvider = tokenProvider;
+_anonymousPaths = anonymousPaths;
+
+_dio = Dio(BaseOptions(
+baseUrl: baseUrl,
+connectTimeout: connectTimeout ?? const Duration(seconds: 5),
+receiveTimeout: receiveTimeout ?? const Duration(seconds: 3),
+));
+
+_dio.interceptors.add(InterceptorsWrapper(
+onRequest: (options, handler) async {
+if (_tokenProvider != null &&
+(_anonymousPaths == null ||
+!_anonymousPaths!.contains(options.path))) {
+final token = await _tokenProvider!();
+if (token != null && token.isNotEmpty) {
+options.headers['Authorization'] = 'Bearer $token';
+mozPrint('Auth token added for ${options.path}', 'API', 'AUTH');
+} else {
+mozPrint('No auth token available for ${options.path}.', 'API',
+'AUTH', 'WARNING');
+}
+} else {
+mozPrint('Request to ${options.path} is anonymous.', 'API', 'AUTH');
+}
+handler.next(options);
+},
+onError: (DioException e, handler) {
+mozPrint(
+'API Error Intercepted: ${e.response?.statusCode} for ${e.requestOptions.path}',
+'API',
+'INTERCEPTOR',
+'ERROR');
+handler.next(e);
+},
+));
+mozPrint('ApiService initialized with base URL: $baseUrl', 'API',
+'INITIALIZATION');
+}
+
+Future<Response> get(String path,
+{Map<String, dynamic>? queryParameters, Options? options}) async {
+try {
+final response = await _dio.get(path,
+queryParameters: queryParameters, options: options);
+mozPrint('$path success.', 'API', 'GET');
+return response;
+} on DioException catch (e) {
+mozPrint('$path failed: ${e.message}', 'API', 'GET', 'ERROR');
+rethrow;
+}
+}
+
+Future<Response> post(String path, {dynamic data, Options? options}) async {
+try {
+final response = await _dio.post(path, data: data, options: options);
+mozPrint('$path success.', 'API', 'POST');
+return response;
+} on DioException catch (e) {
+mozPrint('$path failed: ${e.message}', 'API', 'POST', 'ERROR');
+rethrow;
+}
+}
+
+Future<Response> put(String path, {dynamic data, Options? options}) async {
+try {
+final response = await _dio.put(path, data: data, options: options);
+mozPrint('$path success.', 'API', 'PUT');
+return response;
+} on DioException catch (e) {
+mozPrint('$path failed: ${e.message}', 'API', 'PUT', 'ERROR');
+rethrow;
+}
+}
+
+Future<Response> patch(String path, {dynamic data, Options? options}) async {
+try {
+final response = await _dio.patch(path, data: data, options: options);
+mozPrint('$path success.', 'API', 'PATCH');
+return response;
+} on DioException catch (e) {
+mozPrint('$path failed: ${e.message}', 'API', 'PATCH', 'ERROR');
+rethrow;
+}
+}
+
+Future<Response> delete(String path, {dynamic data, Options? options}) async {
+try {
+final response = await _dio.delete(path, data: data, options: options);
+mozPrint('$path success.', 'API', 'DELETE');
+return response;
+} on DioException catch (e) {
+mozPrint('$path failed: ${e.message}', 'API', 'DELETE', 'ERROR');
+rethrow;
+}
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/state_machine/app_events.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+enum AppEvent { appStarted, splashTimerEnded, goToLanding, goToHome, reloadApp }
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/state_machine/app_state_machine.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'dart:async';
+import 'package:devlite_flutter/state_machine/app_states.dart';
+import 'package:devlite_flutter/state_machine/app_events.dart';
+import 'package:devlite_flutter/state_machine/app_transitions.dart';
+import 'package:devlite_flutter/utilities/utilities.dart';
+
+class AppStateMachine {
+AppState _currentState = AppState.splash;
+final _stateController = StreamController<AppState>.broadcast();
+
+AppState get currentState => _currentState;
+Stream<AppState> get stateStream => _stateController.stream;
+
+void addEvent(AppEvent event) {
+AppState saveState = _currentState;
+_currentState = AppTransitions.getNextState(_currentState, event);
+mozPrint('$event', 'FSM', 'EVENT');
+mozPrint('$saveState\x1B[34m ===> \x1B[0m$_currentState', 'FSM', 'STATE');
+_stateController.sink.add(_currentState);
+}
+
+void reset() {
+_currentState = AppState.splash;
+_stateController.sink.add(_currentState);
+mozPrint('AppStateMachine reset to AppState.splash', 'FSM', 'RESET');
+}
+
+void dispose() {
+_stateController.close();
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/state_machine/app_effects.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/material.dart';
+import 'package:devlite_flutter/state_machine/app_states.dart';
+import 'dart:math';
+import 'package:devlite_flutter/utilities/utilities.dart';
+
+enum TransitionType {
+none,
+fade,
+slide,
+scale,
+rotate,
+size,
+random,
+}
+
+typedef _TransitionBuilder = Widget Function(
+Widget child, Animation<double> animation);
+
+class AppEffects {
+static const TransitionType defaultTransition = TransitionType.fade;
+static final Random _random = Random();
+
+static final Map<({AppState from, AppState to}), TransitionType>
+_stateToStateTransitions = {
+(from: AppState.splash, to: AppState.landing): TransitionType.slide,
+(from: AppState.landing, to: AppState.home): TransitionType.fade,
+(from: AppState.home, to: AppState.splash): TransitionType.random,
+};
+
+static final Map<TransitionType, _TransitionBuilder> _transitionBuilders = {
+TransitionType.fade: (child, animation) =>
+FadeTransition(opacity: animation, child: child),
+TransitionType.slide: (child, animation) => SlideTransition(
+position: Tween<Offset>(
+begin: const Offset(1.0, 0.0),
+end: Offset.zero,
+).animate(animation),
+child: child,
+),
+TransitionType.scale: (child, animation) =>
+ScaleTransition(scale: animation, child: child),
+TransitionType.rotate: (child, animation) => RotationTransition(
+turns: Tween<double>(begin: 0.0, end: 1.0).animate(animation),
+child: child,
+),
+TransitionType.size: (child, animation) => SizeTransition(
+sizeFactor: animation,
+axis: Axis.horizontal,
+child: child,
+),
+TransitionType.none: (child, animation) => child,
+};
+
+static TransitionType getTransitionType(AppState? from, AppState to) {
+if (from == null) {
+return TransitionType.none;
+}
+return _stateToStateTransitions[(from: from, to: to)] ?? defaultTransition;
+}
+
+static Widget buildTransition(
+Widget child, Animation<double> animation, TransitionType type) {
+if (type == TransitionType.random) {
+final List<TransitionType> possibleTransitions = TransitionType.values
+.where((t) => t != TransitionType.none && t != TransitionType.random)
+.toList();
+final TransitionType randomType =
+possibleTransitions[_random.nextInt(possibleTransitions.length)];
+mozPrint(
+'"${randomType.name}" RANDOMLY applied to the outgoing/incoming transition.',
+'FSM',
+'EFFECT');
+return _transitionBuilders[randomType]?.call(child, animation) ?? child;
+}
+mozPrint('"${type.name}" applied to the outgoing/incoming transition.',
+'FSM', 'EFFECT');
+return _transitionBuilders[type]?.call(child, animation) ?? child;
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/state_machine/app_transitions.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:devlite_flutter/state_machine/app_states.dart';
+import 'package:devlite_flutter/state_machine/app_events.dart';
+
+class AppTransitions {
+static final Map<AppState, Map<AppEvent, AppState>> _transitions = {
+AppState.splash: {
+AppEvent.splashTimerEnded: AppState.landing,
+AppEvent.reloadApp: AppState.splash,
+},
+AppState.landing: {
+AppEvent.goToHome: AppState.home,
+AppEvent.reloadApp: AppState.splash,
+},
+AppState.home: {
+AppEvent.reloadApp: AppState.splash,
+},
+};
+
+static AppState getNextState(AppState currentState, AppEvent event) {
+return _transitions[currentState]?[event] ?? currentState;
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/state_machine/app_states.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+enum AppState { splash, landing, home }
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/state_machine/state_machine.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+export 'package:devlite_flutter/state_machine/app_effects.dart';
+export 'package:devlite_flutter/state_machine/app_events.dart';
+export 'package:devlite_flutter/state_machine/app_state_machine.dart';
+export 'package:devlite_flutter/state_machine/app_states.dart';
+export 'package:devlite_flutter/state_machine/app_transitions.dart';
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/startup/load_runtime_data.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/widgets.dart';
+import 'package:devlite_flutter/services/services.dart';
+import 'package:devlite_flutter/utilities/utilities.dart';
+
+void loadRuntimeData(BuildContext context) {
+_loadScreenAndWindowInfo(context);
+mozPrint('Runtime device data loaded.', 'STARTUP', 'DATA');
+}
+
+void _loadScreenAndWindowInfo(BuildContext context) {
+final mediaQuery = MediaQuery.of(context);
+final Configuration config = Configuration();
+
+config.setKey('device.screen.size.width', mediaQuery.size.width);
+config.setKey('device.screen.size.height', mediaQuery.size.height);
+config.setKey('device.screen.orientation', mediaQuery.orientation.name);
+
+mozPrint(
+'Screen dimensions: ${mediaQuery.size.width}x${mediaQuery.size.height} @ ${mediaQuery.devicePixelRatio}x DPI. Orientation: ${mediaQuery.orientation.name}',
+'STARTUP',
+'DATA');
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/startup/load_theme_data.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/material.dart';
+import 'package:devlite_flutter/services/services.dart';
+
+MaterialColor _createMaterialColor(Color color) {
+List strengths = <double>[.05];
+Map<int, Color> swatch = {};
+
+final int rInt = (color.r * 255).round().clamp(0, 255);
+final int gInt = (color.g * 255).round().clamp(0, 255);
+final int bInt = (color.b * 255).round().clamp(0, 255);
+
+for (int i = 1; i < 10; i++) {
+strengths.add(0.1 * i);
+}
+for (var strength in strengths) {
+final double ds = 0.5 - strength;
+swatch[(strength * 1000).round()] = Color.fromRGBO(
+rInt + ((ds < 0 ? rInt : (255 - rInt)) * ds).round(),
+gInt + ((ds < 0 ? gInt : (255 - gInt)) * ds).round(),
+bInt + ((ds < 0 ? bInt : (255 - bInt)) * ds).round(),
+1,
+);
+}
+return MaterialColor(color.toARGB32(), swatch);
+}
+
+ThemeData buildMainTheme() {
+final Configuration config = Configuration();
+final String? baseColorHex = config.getKey('theme.baseColor');
+
+if (baseColorHex == null) {
+throw StateError('Theme baseColor is missing in configuration.');
+}
+
+Color primaryColor = Color(int.parse(baseColorHex));
+
+return ThemeData(
+colorScheme: ColorScheme.fromSeed(
+seedColor: primaryColor,
+brightness: Brightness.light,
+),
+primaryColor: primaryColor,
+primarySwatch: _createMaterialColor(primaryColor),
+);
+}
+
+ThemeData buildDarkTheme() {
+final Configuration config = Configuration();
+final String? baseColorHex = config.getKey('theme.baseColor');
+
+if (baseColorHex == null) {
+throw StateError('Theme baseColor is missing in configuration.');
+}
+
+Color primaryColor = Color(int.parse(baseColorHex));
+
+return ThemeData(
+colorScheme: ColorScheme.fromSeed(
+seedColor: primaryColor,
+brightness: Brightness.dark,
+),
+primaryColor: primaryColor,
+primarySwatch: _createMaterialColor(primaryColor),
+);
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/startup/load_device_data.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:devlite_flutter/utilities/utilities.dart';
+import 'package:devlite_flutter/services/services.dart';
+import 'dart:ui';
+
+void loadDeviceData() {
+_loadLocales();
+_loadTimeFormatPreference();
+_loadDefaultRouteName();
+mozPrint('Initial device data loaded.', 'STARTUP', 'DATA');
+}
+
+void _loadLocales() {
+final locales = PlatformDispatcher.instance.locales;
+if (locales.isNotEmpty) {
+final primaryLocale = locales.first;
+Configuration()
+.setKey('device.locale.languageCode', primaryLocale.languageCode);
+if (primaryLocale.countryCode != null) {
+Configuration()
+.setKey('device.locale.countryCode', primaryLocale.countryCode);
+}
+mozPrint('Device locale loaded: ${primaryLocale.toLanguageTag()}',
+'STARTUP', 'DATA');
+} else {
+mozPrint('No device locales found.', 'STARTUP', 'DATA', 'WARNING');
+}
+}
+
+void _loadTimeFormatPreference() {
+final use24HourFormat = PlatformDispatcher.instance.alwaysUse24HourFormat;
+Configuration().setKey('device.alwaysUse24HourFormat', use24HourFormat);
+mozPrint('Device 24-hour format preference loaded: $use24HourFormat',
+'STARTUP', 'DATA');
+}
+
+void _loadDefaultRouteName() {
+final defaultRoute = PlatformDispatcher.instance.defaultRouteName;
+Configuration().setKey('device.defaultRouteName', defaultRoute);
+mozPrint('Default route name loaded: $defaultRoute', 'STARTUP', 'DATA');
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/startup/startup.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+export 'package:devlite_flutter/startup/initialize_platform_environment.dart';
+export 'package:devlite_flutter/startup/load_asset_configuration.dart';
+export 'package:devlite_flutter/startup/load_device_data.dart';
+export 'package:devlite_flutter/startup/load_runtime_data.dart';
+export 'package:devlite_flutter/startup/load_welcome_endpoint_data.dart';
+export 'package:devlite_flutter/startup/load_theme_data.dart';
+export 'package:devlite_flutter/startup/startup_process.dart';
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/startup/load_welcome_endpoint_data.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:devlite_flutter/utilities/utilities.dart';
+import 'package:devlite_flutter/services/services.dart';
+import 'dart:convert';
+
+Future<void> loadWelcomeEndpointData() async {
+try {
+final welcomeEndpoint = Configuration().getKey('api.welcome') as String?;
+if (welcomeEndpoint == null || welcomeEndpoint.isEmpty) {
+mozPrint('Welcome endpoint not found in configuration.', 'STARTUP',
+'DATA', 'ERROR');
+return;
+}
+
+final response = await postWelcome(
+data: {"preferred_language": "en", "client_identifier": "app:android"});
+
+if (response.statusCode == 200) {
+mozPrint('Welcome data fetched successfully:', 'STARTUP', 'DATA');
+mozPrint(jsonEncode(response.data), 'STARTUP', 'DATA');
+Configuration().setKey('welcome', response.data);
+} else {
+mozPrint('Failed to fetch welcome data: ${response.statusCode}',
+'STARTUP', 'DATA', 'ERROR');
+}
+} catch (e) {
+mozPrint('Error fetching welcome data: $e', 'STARTUP', 'DATA', 'ERROR');
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/startup/load_asset_configuration.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:devlite_flutter/services/services.dart';
+import 'package:devlite_flutter/utilities/utilities.dart';
+
+Future<void> loadAssetConfiguration() async {
+await Configuration().load();
+mozPrint('Asset configuration loaded.', 'STARTUP', 'DATA');
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/startup/initialize_platform_environment.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:window_manager/window_manager.dart';
+import 'package:devlite_flutter/utilities/utilities.dart';
+
+Future<void> initializePlatformEnvironment() async {
+const double windowWidth = (50 * 9);
+const double windowHeight = (50 * 16);
+const double windowAspectRatio = windowWidth / windowHeight;
+
+if (TargetPlatform.linux == defaultTargetPlatform ||
+TargetPlatform.macOS == defaultTargetPlatform ||
+TargetPlatform.windows == defaultTargetPlatform) {
+await windowManager.ensureInitialized();
+
+final String windowTitle = 'Devlite Window';
+
+WindowOptions initialWindowOptions = WindowOptions(
+size: const Size(windowWidth, windowHeight),
+minimumSize: const Size(windowWidth, windowHeight),
+maximumSize: const Size(windowWidth, windowHeight),
+center: true,
+backgroundColor: Colors.transparent,
+skipTaskbar: false,
+titleBarStyle: TitleBarStyle.normal,
+title: windowTitle,
+);
+
+await windowManager.waitUntilReadyToShow(initialWindowOptions, () async {
+await windowManager.setSize(const Size(windowWidth, windowHeight));
+await windowManager.setMinimumSize(const Size(windowWidth, windowHeight));
+await windowManager.setMaximumSize(const Size(windowWidth, windowHeight));
+await windowManager.setAspectRatio(windowAspectRatio);
+await windowManager.center();
+await windowManager.show();
+await windowManager.focus();
+await windowManager.setTitle(windowTitle);
+
+mozPrint(
+'Desktop window initialized to ${windowWidth.toInt()}x${windowHeight.toInt()} with aspect ratio ${windowAspectRatio.toStringAsFixed(2)}',
+'INITIALIZATION',
+'PLATFORM');
+});
+}
+
+if (TargetPlatform.android == defaultTargetPlatform ||
+TargetPlatform.iOS == defaultTargetPlatform) {
+SystemChrome.setPreferredOrientations([
+DeviceOrientation.portraitUp,
+DeviceOrientation.portraitDown,
+]);
+mozPrint(
+'Mobile orientation set to portrait.', 'INITIALIZATION', 'PLATFORM');
+}
+}
+
+
+
+# /home/mozrin/Code/fruitstand/.prep_ai/../lib/startup/startup_process.dart # NOT PART OF CODE DON'T ECHO IT EVER #
+import 'package:flutter/widgets.dart';
+import 'package:devlite_flutter/utilities/utilities.dart';
+import 'package:devlite_flutter/services/services.dart';
+import 'package:devlite_flutter/startup/startup.dart';
+
+typedef LoadingMessageUpdater = void Function(String message);
+
+Future<String?> _mockGetAuthToken() async {
+return 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vMTkyLjE2OC42OC45OS9hcGkvYXV0aC9naXRodWIvY2FsbGJhY2siLCJpYXQiOjE3NDk2NDUyMjgsImV4cCI6MTc1MjY0NTIyOCwibmJmIjoxNzQ5NjQ1MjI4LCJqdGkiOiJHQmxRS2FGYklpSmU4SFNmIiwic3ViIjoiMDE5NzVlZjktNzUzZS03MGE3LWExMTUtYTBkYWE3NjhhYWMxIiwicHJ2IjoiMjNiZDVjODk0OWY2MDBhZGIzOWU3MDFjNDAwODcyZGI3YTU5NzZmNyIsInByb2ZpbGVfaWQiOiIwMTk3NWVmOS03NTU5LTcwMDItYmQ0YS05OTA1ZmFkMWYwYmUifQ.ZMCL4wbKFkAjHe7_vRqzyHX6SnFA2BzCv3OVgNWe41s';
+}
+
+Future<void> performStartupProcess({
+required BuildContext context,
+required LoadingMessageUpdater updateMessage,
+}) async {
+List<String> loadingSteps = [
+'Loading device data...',
+'Initializing API service...',
+'Loading runtime data...',
+'Loading welcome data...',
+'Finishing startup...',
+];
+
+try {
+updateMessage(loadingSteps[0]);
+loadDeviceData();
+
+updateMessage(loadingSteps[1]);
+final String? apiBaseUrl = Configuration().getKey('api.baseurl');
+final Uri? parsedUri = apiBaseUrl != null ? Uri.tryParse(apiBaseUrl) : null;
+
+if (apiBaseUrl == null || parsedUri == null || !parsedUri.isAbsolute) {
+throw Exception(
+'API base URL is invalid or missing in configuration. Cannot proceed without a valid API endpoint.');
+}
+
+ApiService().initialize(
+baseUrl: apiBaseUrl,
+tokenProvider: _mockGetAuthToken,
+anonymousPaths: ['/welcome', '/auth/login', '/auth/register'],
+);
+
+updateMessage(loadingSteps[2]);
+WidgetsBinding.instance.addPostFrameCallback((_) {
+if (context.mounted) {
+loadRuntimeData(context);
+}
+});
+await Future.delayed(const Duration(milliseconds: 50));
+
+updateMessage(loadingSteps[3]);
+await loadWelcomeEndpointData();
+
+updateMessage(loadingSteps[4]);
+mozPrint('All startup tasks completed successfully.', 'STARTUP', 'PROCESS');
+} catch (e) {
+mozPrint('Startup process failed: $e', 'STARTUP', 'PROCESS', 'ERROR');
+rethrow;
+}
+}
+
+
+

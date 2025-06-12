@@ -1,0 +1,9 @@
+This is a flutter/dart application
+
+1. Do not write code unless I ask for it.
+2. Never put comments in my code.
+3. Be brief and concise in all output.
+
+These are "the rules" .. follow the rules.
+
+Read me code and in 3-5 words tell me what we are building.

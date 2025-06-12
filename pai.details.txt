@@ -1,0 +1,14 @@
+There is an architectural problem here ..
+
+The splash_screen.dart needs to be isolated from the rest of the interfaces.
+
+We need to throw this screen up BEFORE colors and themes and configuration ... 
+BEFORE everything is loaded so that it can tell us about the loading process.
+
+So ... the main BEFORE the RunApp process ... needs to:
+
+throw up the splash_screen
+load everything through the await startup_process() which updates the splash_screen
+and then do the runapp and launch the main processes
+
+discuss ... your thoughts .. brief .. concise ..
