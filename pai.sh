@@ -1,16 +1,16 @@
 #!/bin/bash
 
 # Setup Parameters
-PREP_AI_DIR="$PWD"
-OUTPUT_FILE="$PREP_AI_DIR/prep_ai.output.txt"
-PROMPT_FILE="$PREP_AI_DIR/prep_ai.details.txt"
-PROBLEM_FILE="$PREP_AI_DIR/prep_ai.issues.txt"
+PAI_DIR="$PWD"
+OUTPUT_FILE="$PAI_DIR/pai.output.txt"
+PROMPT_FILE="$PAI_DIR/pai.details.txt"
+PROBLEM_FILE="$PAI_DIR/pai.issues.txt"
 
 # DART EXAMPLE
 EXCLUDE_FILES="nothing.txt"
 EXCLUDE_DIRS="build|ios|android|.dart_tool|.git|web|macos|windows|linux|packages|images|temp|test|test_driver"
 INCLUDE_EXTS="dart|yaml|json"
-ROOT_FOLDERS="$PREP_AI_DIR/../assets|$PREP_AI_DIR/../lib"
+ROOT_FOLDERS="$PAI_DIR/../assets|$PAI_DIR/../lib"
 
 # LARAVEL EXAMPLE
 # EXCLUDE_FILES="package-lock.json|composer-lock.json|0001_01_09_000001_create_permission_tables.php"
