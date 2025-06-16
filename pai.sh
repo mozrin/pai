@@ -3,8 +3,8 @@
 # Setup Parameters
 PAI_DIR="$PWD"
 OUTPUT_FILE="$PAI_DIR/pai.output.txt"
-PROMPT_FILE="$PAI_DIR/pai.details.txt"
-PROBLEM_FILE="$PAI_DIR/pai.issues.txt"
+PROMPT_FILE="$PAI_DIR/pai.prompt.txt"
+DETAILS_FILE="$PAI_DIR/pai.details.txt"
 
 # DART EXAMPLE
 EXCLUDE_FILES="nothing.txt"
@@ -18,10 +18,10 @@ ROOT_FOLDERS="$PAI_DIR/../assets|$PAI_DIR/../lib"
 # INCLUDE_EXTS="php|json|yml"
 
 # --- Section 0: Create file and add the prompt and problem details
-touch "$OUTPUT_FILE"
+> "$OUTPUT_FILE"
 cat "$PROMPT_FILE" >> "$OUTPUT_FILE"
 echo -e "\n\n" >> "$OUTPUT_FILE"
-cat "$PROBLEM_FILE" >> "$OUTPUT_FILE"
+cat "$DETAILS_FILE" >> "$OUTPUT_FILE"
 echo -e "\n\n" >> "$OUTPUT_FILE"
 
 # --- Section 1: Folder Structure (containing .dart files within lib/) ---
