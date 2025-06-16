@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# remove the *.txt file .. testing
-
 # Setup Parameters
 PAI_DIR="$PWD"
 OUTPUT_FILE="$PAI_DIR/pai.output.txt"
