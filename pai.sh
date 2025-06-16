@@ -54,7 +54,7 @@ for ROOT_FOLDER in "${FOLDERS[@]}"; do
   find "$ROOT_FOLDER" -type f | grep -E "\.($INCLUDE_EXTS)$" | grep -Ev "$EXCLUDE_DIRS" | while read -r file; do
     filename=$(basename "$file")
     if ! echo "$filename" | grep -Eq "$EXCLUDE_FILES"; then
-      echo "# $file # NOT PART OF CODE DON'T ECHO IT EVER #" >> "$OUTPUT_FILE"
+      echo "# $file " >> "$OUTPUT_FILE"
       sed '/\/\*/,/\*\//d' "$file" | sed 's|//.*||' | sed '/^use /{ /Has/!d }' | sed 's/^[ \t]*//' >> "$OUTPUT_FILE"
 echo -e "\n\n" >> "$OUTPUT_FILE"
     fi

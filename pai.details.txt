@@ -1,1 +1,0 @@
-We are going to hard code the first screen of the zork 1 adventure and then create a way to take input from the user.
