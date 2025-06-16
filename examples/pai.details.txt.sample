@@ -1,0 +1,3 @@
+We are going to try and strip the token from the webView as a pre-navigation
+process and then abort the redirect navigation request. This will eliminate the
+need to work with schemes and help to unify our code across all platforms.

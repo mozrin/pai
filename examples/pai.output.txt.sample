@@ -1,0 +1,37 @@
+--- Prompt ---
+
+We are going to try and strip the token from the webView as a pre-navigation
+process and then abort the redirect navigation request. This will eliminate the
+need to work with schemes and help to unify our code across all platforms.
+
+--- Details ---
+
+We are going to try and strip the token from the webView as a pre-navigation
+process and then abort the redirect navigation request. This will eliminate the
+need to work with schemes and help to unify our code across all platforms.
+
+--- Folder Structure ---
+
+/home/mozrin/Code/assets/
+└── languages/
+
+2 directories, 0 files
+
+/home/mozrin/Code/lib/
+├── everything.dart
+├── main.dart
+├── screens/
+
+... et al
+
+27 directories, 53 files
+
+--- Baseline File Contents ---
+
+This is where it will gather, strip (whitespace) and dump the contents of all selected
+code.
+
+Currently the pai.sh file contains the configuration in environment variable. I will
+endeavor to fix this at some point, but since I am the only one using this ... 
+
+... maybe never.
