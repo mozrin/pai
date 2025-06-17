@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Include Configuration Paramters
-source pai_config.sh
+source ./pai_config.sh
 
 # --- Section: Initialize Output File
 > "$OUTPUT_FILE"

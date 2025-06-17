@@ -4,10 +4,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 # Where are the pai files located?
-PAI_DIR="/orchard/.pai"
+PAI_DIR="$PWD"
 
 # Where is your code located?
-CODE_DIR="/orchard"
+CODE_DIR="/home/mozrin/Code/orchard"
 
 # What do you want your input and output files called?
 #
