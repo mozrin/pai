@@ -1,235 +1,192 @@
-# 🧠 PAI – Prompt Aggregation for Inference
+# 🧠 PAI – Prep AI
 
-> **Automate the grunt-work of turning a whole codebase into one perfect LLM prompt**
+> **Automate the grunt-work of turning a whole codebase into one perfect LLM prompt.**
+
+PAI is a simple, powerful shell script that scans your project, filters out the noise, and bundles all relevant source code, file structures, and instructions into a single, context-rich text file ready for any Large Language Model.
 
 ---
 
 ## Table of Contents
 
-1. [Why PAI Exists](#1-why-pai-exists)
-2. [Quick Start (TL;DR)](#2-quick-start-tldr)
-3. [Repository Layout](#3-repository-layout)
-4. [Sample Files & Output](#4-sample-files--output)
-5. [Installation & Keeping PAI out of Git](#5-installation--keeping-pai-out-of-git)
-6. [Configuration Deep-Dive (`pai_config.sh`)](#6-configuration-deep-dive-paiconfigsh)
-7. [How `pai.sh` Works (Pipeline)](#7-how-paish-works-pipeline)
-8. [Include / Exclude Engine — Caveats](#8-include--exclude-engine--caveats)
-9. [Dependencies](#9-dependencies)
-10. [Troubleshooting](#10-troubleshooting)
-11. [Roadmap](#11-roadmap)
-12. [License](#12-license)
+1.  [Why PAI Exists](#1-why-pai-exists)
+2.  [Quick Start Guide](#2-quick-start-guide)
+3.  [How It Works: The `pai.env` System](#3-how-it-works-the-paienv-system)
+4.  [Installation and Usage](#4-installation-and-usage)
+5.  [Configuration Deep-Dive (`pai.env`)](#5-configuration-deep-dive-paienv)
+6.  [The PAI Script Pipeline](#6-the-pai-script-pipeline)
+7.  [Dependencies](#7-dependencies)
+8.  [Troubleshooting](#8-troubleshooting)
+9.  [License](#9-license)
 
 ---
 
 ## 1. Why PAI Exists
 
-Large-language models thrive on **focused context**.  
-Copy-pasting random snippets wastes tokens, loses structure, and derails your flow.  
-PAI compresses everything you need into **one single text file**:
+Large-language models thrive on **focused context**. Copy-pasting random snippets wastes tokens, loses structure, and derails your flow. PAI solves this by programmatically compressing your project's essence into **one single text file**.
 
-| Section in `pai.output.txt`      | What it contains                                            |
-| -------------------------------- | ----------------------------------------------------------- |
-| `--- Prompt ---`                 | Global directives (style, rules, etc.)                      |
-| `--- Details ---`                | Session-specific context (the “story so far”)               |
-| `--- Folder Structure ---`       | A pretty tree of only the relevant folders                  |
-| `--- Baseline File Contents ---` | Every source file you care about, comment-stripped and tidy |
+| Section in Output File           | What it Contains                                                                      |
+| -------------------------------- | ------------------------------------------------------------------------------------- |
+| `--- AI Primary Prompt ---`      | Your global, unchanging directives (style, rules, overall goal).                      |
+| `--- AI Details Prompt ---`      | Session-specific context (the task at hand, the "story so far").                      |
+| `--- Folder Structure ---`       | A clean `tree` view of only the relevant source code directories and files.           |
+| `--- Baseline File Contents ---` | Every source file you care about, stripped of comments, trimmed, and clearly labeled. |
 
-Hand that file to any model—ChatGPT, Claude, Gemini, whatever—and you’re rolling in seconds.
+Hand the generated file to any model—ChatGPT, Claude, Gemini, or a local LLM—and you’re ready to code in seconds.
 
 ---
 
-## 2. Quick Start (TL;DR)
+## 2. Quick Start Guide
+
+1.  **Add PAI to your project's `.gitignore`:**
+
+    ```bash
+    echo ".pai/" >> .gitignore
+    ```
+
+2.  **Clone PAI into a hidden `.pai` folder inside your project:**
+
+    ```bash
+    git clone https://github.com/moztopia/pai .pai
+    ```
+
+3.  **Create your configuration file from the sample:**
+
+    ```bash
+    cp .pai/examples/pai.env.sample .pai/pai.env
+    ```
+
+4.  **Edit `.pai/pai.env`** to set your `PROJECT_PROFILE` (e.g., `DART_FLUTTER`).
+
+5.  **Navigate into the `.pai` directory:**
+
+    ```bash
+    cd .pai
+    ```
+
+6.  **Make the script executable and run it:**
+
+    ```bash
+    chmod +x pai-gen.sh
+    ./pai-gen.sh
+    ```
+
+7.  **Done!** Your complete context is now in `pai.output.txt` inside the `.pai` folder.
+
+---
+
+## 3. How It Works: The `pai.env` System
+
+PAI is designed to be **project-aware and portable**. It achieves this by separating configuration from logic.
+
+- **`pai.env` (Your Configuration):** This is where you define _what_ to scan. It's a simple text file holding key-value pairs. You define "profiles" for different project types (e.g., a profile for Flutter, another for Laravel) and simply choose which one to use.
+- **`pai-gen.sh` (The Engine):** This is the script that does the work. It reads `pai.env`, dynamically figures out your project's file paths, and intelligently applies the include/exclude rules from your chosen profile to build the final output.
+
+This design means you can drop PAI into any project, set the profile, and it just works—no hardcoded paths, no script editing required.
+
+---
+
+## 4. Installation and Usage
+
+### Repository Layout
+
+Place the PAI toolset in a `.pai` directory at the root of your project. The leading dot keeps the folder hidden and grouped at the top of file listings.
+
+```
+your-project/
+├── .git/
+├── .pai/                  # PAI lives here, ignored by git
+│   ├── pai-gen.sh         # 🏃 The main script you run
+│   ├── pai.env            # ⚙️ Your local configuration (you create this)
+│   ├── pai.prompt.txt     # 🌐 Your global AI directives
+│   ├── pai.details.txt    # 🎯 Your session-specific context
+│   ├── examples/
+│   │   └── pai.env.sample # 📋 A template to create your pai.env from
+│   └── README.md          # 📖 You are here
+├── lib/
+└── ...your project files
+```
+
+### Running the Script
+
+**Important: You must run the script from within the `.pai` directory.**
+
+The script is designed to be executed only from its own folder. Attempting to run it from the project root or any other location will cause it to fail with an error message.
+
+**Correct Usage:**
 
 ```bash
-# 1 · Add PAI to your project .gitignore
-echo '**/.pai/' >> .gitignore
-
-# 2 · Clone PAI into a hidden folder
-git clone https://github.com/moztopia/pai .pai
-
-# 3 · (Optionally) Tweak filters in .pai/pai_config.sh
-(edit this file ---->) .pai/pai_config.sh
-
-# 4 · Generate the prompt package
 cd .pai
-chmod +x pai.sh
-./pai.sh
+./pai-gen.sh
+```
 
-# 5 · Copy-paste .pai/pai.output.txt into your LLM chat window
+**Incorrect Usage:**
+
+```bash
+# This will fail
+./.pai/pai-gen.sh
 ```
 
 ---
 
-## 3. Repository Layout
+## 5. Configuration Deep-Dive (`pai.env`)
 
-```
-.pai/                  # Suggested location (kept out of main repo)
-├── pai.sh             # 🏃 run this
-├── pai_config.sh      # ⚙️  env vars only; dies if run directly
-├── pai.prompt.txt     # 🌐 global AI directives
-├── pai.details.txt    # 🎯 session-specific context
-├── examples/          # 📂 sample input & output
-└── README.md          # 📖 you are here
-```
+Your entire configuration lives in `.pai/pai.env`. You define different sets of rules ("profiles") and then activate one.
 
----
+| Variable Group                          | Description                                                                                                                                                      |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ------- | ------ |
+| `PROJECT_PROFILE`                       | **The most important setting.** Set this to the profile you want to use, e.g., `PROJECT_PROFILE="DART_FLUTTER"`. The script uses this to select the rules below. |
+| `*_ROOT_FOLDERS`                        | Pipe-separated list of folders **relative to your project root** to scan. <br>Example: `DART_FLUTTER_ROOT_FOLDERS="lib                                           | assets"`          |
+| `*_INCLUDE_EXTS`                        | Pipe-separated list of file extensions to include. <br>Example: `PHP_LARAVEL_INCLUDE_EXTS="php                                                                   | blade.php         | json"`  |
+| `*_EXCLUDE_DIRS`                        | Pipe-separated list of directory names to ignore completely. <br>Example: `DART_FLUTTER_EXCLUDE_DIRS="build                                                      | ios               | android | .git"` |
+| `*_EXCLUDE_FILES`                       | Pipe-separated list of filename patterns (regex-compatible) to ignore. <br>Example: `DART_FLUTTER_EXCLUDE_FILES="\*.g.dart                                       | \*.freezed.dart"` |
+| `(OUTPUT/PROMPT/DETAILS)_FILE_BASENAME` | The filenames for the output and input prompt files. Defaults are fine.                                                                                          |
 
-## 4. Sample Files & Output
-
-<details>
-<summary>pai.prompt.txt</summary>
-
-```text
-Flutter/Dart Project (android/linux/ios/windows/macos targets)
-Do not put comments in my code.
-Do not write code unless I ask for it.
-Be brief and concise.
-Your function in this is help and not as a teacher.
-Think ... code monkey.
-```
-
-</details>
-
-<details>
-<summary>pai.details.txt</summary>
-
-```text
-We are going to try and strip the token from the webView as a pre-navigation
-process and then abort the redirect navigation request. This will eliminate the
-need to work with schemes and help to unify our code across all platforms.
-```
-
-</details>
-
-<details>
-<summary>Generated pai.output.txt (truncated)</summary>
-
---- Prompt ---
-Flutter/Dart Project … Think ... code monkey.
-
---- Details ---
-We are going to try and strip the token from the webView …
-
---- Folder Structure ---
-/home/mozrin/Code/assets/
-└── languages/
-
-2 directories, 0 files
-
-/home/mozrin/Code/lib/
-├── everything.dart
-├── main.dart
-├── screens/
-…
-27 directories, 53 files
-
---- Baseline File Contents ---
-
-/home/mozrin/Code/lib/main.dart
-
-import 'package:flutter/material.dart';
-…
-
-</details>
+To add a new profile (e.g., for a Python project), simply add the corresponding `PYTHON_DJANGO_*` variables to `pai.env` and set `PROJECT_PROFILE="PYTHON_DJANGO"`.
 
 ---
 
-## 5. Installation & Keeping PAI out of Git
+## 6. The PAI Script Pipeline
 
-1. **Ignore it**
+When you run `pai-gen.sh`, it performs the following steps:
 
-   ```bash
-   echo '**/.pai/' >> .gitignore
-   ```
-
-2. **Clone into that ignored folder**
-   ```bash
-   git clone https://github.com/moztopia/pai .pai
-   ```
-3. **Why the leading dot?**
-   It shoves PAI to the top of your project tree, keeps it hidden, and makes sure it never sneaks into production builds or blends into your production folders.
-
----
-
-## 6. Configuration Deep-Dive (`pai_config.sh`)
-
-| Variable        | Description / Example                                                                  |
-| --------------- | -------------------------------------------------------------------------------------- |
-| `PAI_DIR`       | Where prompt, detail, and output files live (default: current directory).              |
-| `CODE_DIR`      | Optional pointer to your real code root.                                               |
-| `OUTPUT_FILE`   | Final aggregated file (default: `$PAI_DIR/pai.output.txt`).                            |
-| `PROMPT_FILE`   | Global directives path (`pai.prompt.txt`).                                             |
-| `DETAILS_FILE`  | Session context path (`pai.details.txt`).                                              |
-| `ROOT_FOLDERS`  | Pipe-separated list of folders to scan, e.g.:<br>`$PAI_DIR/../assets\|$PAI_DIR/../lib` |
-| `INCLUDE_EXTS`  | Extensions to keep, e.g. `dart\|yaml\|json`.                                           |
-| `EXCLUDE_DIRS`  | Directory names to ignore, e.g. `build\|ios\|android\|.git\|test\|…`.                  |
-| `EXCLUDE_FILES` | Filenames (regex) to drop, e.g. `package-lock.json\|\*.generated.dart`.                |
-
-> **Heads-up:** the include/exclude engine is _functional_ but **not battle-tested** on every project type. Verify the output before feeding it to mission-critical prompts.
+| Step | What Happens                                                                                                                                                                           |
+| :--- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | **Validate Location:** Checks that you are running the script from within the `.pai` directory.                                                                                        |
+| 2    | **Load Config:** Reads `.pai/pai.env`, determines project paths, and selects the active profile's rules.                                                                               |
+| 3    | **Initialize:** Wipes and creates a fresh `pai.output.txt`.                                                                                                                            |
+| 4    | **Add Prompts:** Appends the content of `pai.prompt.txt` and `pai.details.txt` under their respective headers.                                                                         |
+| 5    | **Build Tree:** Scans your `ROOT_FOLDERS`. If `tree` is installed, it generates a clean diagram showing only included files. Otherwise, it falls back to a simple list of directories. |
+| 6    | **Sweep Files:** `find`s all files matching `INCLUDE_EXTS` within `ROOT_FOLDERS`, skipping any `EXCLUDE_DIRS` or `EXCLUDE_FILES`.                                                      |
+| 7    | **Process & Append:** For each found file, it strips comments (`//` and `/* ... */`), trims whitespace, prepends a `# path/to/file.ext` header, and appends it to the output.          |
+| 8    | **Report:** Finishes by printing a success message to the console.                                                                                                                     |
 
 ---
 
-## 7. How `pai.sh` Works (Pipeline)
+## 7. Dependencies
 
-| Step | What happens                                                                                                                                                                                                                   |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1    | `source pai_config.sh`.                                                                                                                                                                                                        |
-| 2    | Wipe/initialise `pai.output.txt`.                                                                                                                                                                                              |
-| 3    | Append `--- Prompt ---` section from `pai.prompt.txt`.                                                                                                                                                                         |
-| 4    | Append `--- Details ---` section from `pai.details.txt`.                                                                                                                                                                       |
-| 5    | **Folder tree:**<br>• If `tree` exists → `tree -F -P "*.$INCLUDE_EXTS" -I "$EXCLUDE_DIRS"`.<br>• Else → manual `find` + `grep` fallback.                                                                                       |
-| 6    | **File sweep:**<br>• `find` every file matching `INCLUDE_EXTS`.<br>• Skip `EXCLUDE_DIRS` and `EXCLUDE_FILES`.<br>• Strip `/* … */` and `// ...` comments, trim whitespace.<br>• Prepend each file with `# /full/path/to/file`. |
-| 7    | Echo `Generated /path/to/pai.output.txt`.                                                                                                                                                                                      |
-
-All heavy lifting sits in one script for now; modular refactor is on the roadmap.
+| Tool   | Purpose                        | Install (Ubuntu/Debian)           | Notes                                                        |
+| ------ | ------------------------------ | --------------------------------- | ------------------------------------------------------------ |
+| `bash` | Script runtime                 | Pre-installed on most Linux/macOS | Tested on Bash 5+                                            |
+| `gawk` | Robust comment/text processing | `sudo apt install gawk`           | GNU awk is used for its advanced text manipulation features. |
+| `tree` | Pretty directory diagrams      | `sudo apt install tree`           | **Optional.** The script gracefully falls back if not found. |
 
 ---
 
-## 8. Include / Exclude Engine — Caveats
+## 8. Troubleshooting
 
-- Regexes are **OR-joined**, not AND-joined.
-- Exclude patterns run **after** extension filtering.
-- Multiline comment removal is naïve—edge-cases (nested comments, strings) may slip.
-- Pull Requests welcome!
-
----
-
-## 9. Dependencies
-
-| Tool   | Purpose                   | Install (Ubuntu)        | Notes                                   |
-| ------ | ------------------------- | ----------------------- | --------------------------------------- |
-| `tree` | Pretty directory diagrams | `sudo apt install tree` | Optional; fallback to `find` if missing |
-| `bash` | Script runtime            | Comes with every distro | Tested on Bash 5+                       |
-
-No other external binaries are required.
+| Symptom                                                          | Fix                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Error: This script must be run from within the .pai directory.` | You tried to run the script from the wrong place. Follow the instructions: `cd .pai` and then `./pai-gen.sh`.                                                                                                                                                                                                                                                                                                 |
+| `You need a pai.env file...`                                     | You forgot to copy the sample file. Run `cp examples/pai.env.sample pai.env` from inside the `.pai` directory.                                                                                                                                                                                                                                                                                                |
+| `Error: DART_FLUTTER_ROOT_FOLDERS is not defined...`             | The `PROJECT_PROFILE` you set in `pai.env` doesn't have a corresponding `*_ROOT_FOLDERS` variable defined. Check for typos.                                                                                                                                                                                                                                                                                   |
+| `tree: command not found`                                        | This is just a warning. The script will work fine. To get the pretty tree view, run `sudo apt install tree`.                                                                                                                                                                                                                                                                                                  |
+| A file you wanted is missing from the output                     | Check your `*_INCLUDE_EXTS`, `*_EXCLUDE_DIRS`, and `*_EXCLUDE_FILES` patterns in `.pai/pai.env`.                                                                                                                                                                                                                                                                                                              |
+| The output file is still too big                                 | Tighten your `*_EXCLUDE_*` rules. Exclude test directories, assets, or generated code more aggressively.<br><br>**Note:** Many consumer AI tools have limited input sizes. PAI was built to leverage the large context windows of tools like [Google AI Studio](https://aistudio.google.com/prompts/new_chat). If you are consistently hitting input limits, consider using a service with a larger capacity. |
 
 ---
 
-## 10. Troubleshooting
+## 9. License
 
-| Symptom                                               | Fix                                                               |
-| ----------------------------------------------------- | ----------------------------------------------------------------- |
-| `pai_config.sh: This script is meant to be included…` | You tried to `./pai_config.sh`. Run `pai.sh` instead.             |
-| `tree: command not found`                             | `sudo apt install tree` (or ignore; fallback will trigger).       |
-| File you wanted is missing                            | Check `INCLUDE_EXTS` / `EXCLUDE_DIRS` / `EXCLUDE_FILES` patterns. |
-| Output still huge                                     | Tighten your filters, or add token budgeting to roadmap!          |
+MIT — do what you want with this, but don't blame me if your AI hallucinates. See the `LICENSE` file for the full text.
 
----
-
-## 11. Roadmap
-
-- Modular config file (pull env vars out of `pai.sh`).
-- Smarter comment stripper (keep docstrings, ditch noise).
-- Token-budget estimator (`wc -w`, token heuristics).
-- Unit tests for filter engine.
-- Cross-platform checks (macOS Homebrew, Windows Git Bash).
-
----
-
-## 12. License
-
-MIT—do what you want, just don’t blame me if your AI hallucinates.
-See [LICENSE](LICENSE) for full text.
-
-**Made with caffeine & curiosity.**
-If PAI speeds up your workflow, drop a ⭐️ or open an issue with ideas!
+**Made with caffeine & curiosity.** If PAI speeds up your workflow, drop a ⭐️ on the repo or open an issue with your ideas.
